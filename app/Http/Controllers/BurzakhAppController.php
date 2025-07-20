@@ -435,6 +435,7 @@ public function setNewPassword(Request $request)
             'location'                      => 'required',
             'gender'                       => 'required',
             'age'                          => 'required',
+            'passport_document'            => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -446,7 +447,7 @@ public function setNewPassword(Request $request)
         $hospitalCertificatePath    = $request->file('hospital_certificate')->store('documents/hospital_certificates', 'public');
         $passportOrEmirateIdFront   = $request->file('passport_or_emirate_id_front')->store('documents/passport_or_emirate_ids_front', 'public');
         $passportOrEmirateIdBack    = $request->file('passport_or_emirate_id_back')->store('documents/passport_or_emirate_ids_back', 'public');
-        // $addtionalDocument    = $request->file('additional_document_upload_user')->store('documents/additional_document_upload_user', 'public');
+        $passportDocument    = $request->file('passport_document')->store('documents/passport_document', 'public');
         $user_id                    = $request->user_id;     
         $resting_place              = $request->resting_place;     
         $name_of_deceased           = $request->name_of_deceased;     
@@ -467,6 +468,7 @@ public function setNewPassword(Request $request)
             'ratio'                        => 0.2,
             'gender'                       => $request->gender,
             'age'                          => $request->age,
+            'passport_document'            => $passportDocument,
         ]);
 
         $data = RecentActivity::create([
@@ -616,7 +618,7 @@ public function setNewPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'mourning_start_date'     => 'required',
-            'time'                    => 'required',
+            // 'time'                    => 'required',
             'location_of_house'       => 'required',
             'signs_required'          => 'required',
             'custom_text_for_sign'    => 'required',
@@ -631,7 +633,7 @@ public function setNewPassword(Request $request)
 
         $submission = RtaSubmission::create([
             'mourning_start_date'     => $request->mourning_start_date,
-            'time'                    => $request->time,
+            // 'time'                    => $request->time,
             'location_of_house'        => $request->location_of_house,
             'signs_required'          => $request->signs_required,
             'custom_text_for_sign'    => $request->custom_text_for_sign,
@@ -775,7 +777,7 @@ public function setNewPassword(Request $request)
             'user_id'                        => 'required',
             'case_name'                      => 'required',
             'religion'                       => 'required',
-            'sect'                           => 'required',
+            'sect'                           => 'nullable',
             'special_request'                => 'nullable',
         ]);
 
@@ -1338,6 +1340,7 @@ public function setNewPassword(Request $request)
             'hospital_certificate_status' => 'approved',
             'passport_or_emirate_id_front_status' => 'approved',
             'passport_or_emirate_id_back_status' => 'approved',
+            'passport_document_status' => 'approved',
             'police_clearance' => $this->base_url . "/storage/app/public/" . $filePath,
             'ratio' => 0.4,
         ]);
@@ -2270,11 +2273,12 @@ public function setNewPassword(Request $request)
     }
 
 
+   
     // public function updateMancipalityRequestStatus(Request $request, $id)
     // {
     //     $validator = Validator::make($request->all(), [
-    //         'action' => 'required|in:approve',
-    //         'grave_number' => 'required',
+    //         'action' => 'required|in:approve,assign_grave_number',
+    //         'grave_number' => 'required_if:action,assign_grave_number',
     //     ]);
 
     //     if ($validator->fails()) {
@@ -2286,129 +2290,178 @@ public function setNewPassword(Request $request)
     //     if (!$mancipality) {
     //         return response()->json([
     //             'status' => false,
-    //             'message' => 'mancipality request not found.',
+    //             'message' => 'Mancipality request not found.',
     //         ], 404);
     //     }
 
     //     $action = $request->action;
-    //     $grave_number = $request->grave_number;
     //     $message = '';
 
     //     if ($action === 'approve') {
     //         $mancipality->status = 'Approve';
-    //         $mancipality->grave_number = $grave_number;
-    //         $message = "Your request of Mancipality has been approved. Grave Number: " . $grave_number;
+    //         $message = "Your request to the Mancipality has been approved.";
 
-    //         $cemetry_case_submission = CemeteryCase::create([
+    //         // Log approval activity
+    //         RecentActivity::create([
+    //             'user_id'       => $mancipality->user_id,
+    //             'activity_name' => "Mancipality request approved.",
+    //             'status'        => "Request Approved"
+    //         ]);
+    //     }
+
+    //     if ($action === 'assign_grave_number') {
+    //         $grave_number = $request->grave_number;
+    //         $mancipality->grave_number = $grave_number;
+    //         $mancipality->grave_status = "grave-number-assigned";
+    //         $message = "Grave number assigned by Mancipality: " . $grave_number;
+
+    //         // Create cemetery case
+    //         CemeteryCase::create([
     //             'grave_number' => $grave_number,
-    //             'user_id' => $mancipality->user_id,
-    //             'case_name' => $mancipality->case_name,
+    //             'user_id'      => $mancipality->user_id,
+    //             'case_name'    => $mancipality->case_name,
+    //         ]);
+
+    //         // Log assignment activity
+    //         RecentActivity::create([
+    //             'user_id'       => $mancipality->user_id,
+    //             'activity_name' => "Grave number assigned by Mancipality.",
+    //             'status'        => "Grave Assigned"
     //         ]);
     //     }
 
     //     $mancipality->save();
 
-    //     BurzakhNotification::create([
-    //         'user_id' => $mancipality->user_id,
-    //         'notification_message' => $message,
-    //     ]);
+    //     // Send notification if any message was generated
+    //     if ($message) {
+    //         BurzakhNotification::create([
+    //             'user_id'              => $mancipality->user_id,
+    //             'notification_message' => $message,
+    //         ]);
+    //     }
 
-    //     RecentActivity::create([
-    //         'user_id'        => $mancipality->user_id,
-    //         'activity_name'  => "Grave number assigned by mancipality.",
-    //         'status'         => "Request Approved"
-    //     ]);
-
-    //     $updateSubmissionStatus=BurzakhMemberDocumentSubmission::where('user_id',$mancipality->user_id)->where('name_of_deceased',$mancipality->case_name)->update(['burial_submission_status'=>'Approved','ratio'=>0.6]);
+    //     // Update member document status only if approved
+    //     if ($action === 'approve') {
+    //         BurzakhMemberDocumentSubmission::where('user_id', $mancipality->user_id)
+    //             ->where('name_of_deceased', $mancipality->case_name)
+    //             ->update([
+    //                 'burial_submission_status' => 'Approved',
+    //                 'ratio' => 0.6
+    //             ]);
+    //     }
 
     //     return response()->json([
-    //         'status' => true,
+    //         'status'  => true,
     //         'message' => 'Mancipality request status updated successfully.',
-    //         'data' => $mancipality,
+    //         'data'    => $mancipality,
     //     ]);
     // }
     public function updateMancipalityRequestStatus(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
-            'action' => 'required|in:approve,assign_grave_number',
-            'grave_number' => 'required_if:action,assign_grave_number',
+{
+    $validator = Validator::make($request->all(), [
+        'action' => 'required|in:approve,assign_grave_number',
+        'grave_number' => 'required_if:action,assign_grave_number',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
+
+    $mancipality = BurzakhUserSubmissionToMancipality::find($id);
+
+    if (!$mancipality) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Mancipality request not found.',
+        ], 404);
+    }
+
+    $action = $request->action;
+    $message = '';
+
+    if ($action === 'approve') {
+        $mancipality->status = 'Approve';
+        $message = "Your request to the Mancipality has been approved.";
+
+        // Log approval activity
+        RecentActivity::create([
+            'user_id'       => $mancipality->user_id,
+            'activity_name' => "Mancipality request approved.",
+            'status'        => "Request Approved"
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+        // Check if grave number is assigned
+        $grave_number = $mancipality->grave_number ?? 'Not Assigned Yet';
 
-        $mancipality = BurzakhUserSubmissionToMancipality::find($id);
+        // Create cemetery case only if not already exists
+        $cemeteryCase = CemeteryCase::where('user_id', $mancipality->user_id)
+            ->where('case_name', $mancipality->case_name)
+            ->first();
 
-        if (!$mancipality) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Mancipality request not found.',
-            ], 404);
-        }
-
-        $action = $request->action;
-        $message = '';
-
-        if ($action === 'approve') {
-            $mancipality->status = 'Approve';
-            $message = "Your request to the Mancipality has been approved.";
-
-            // Log approval activity
-            RecentActivity::create([
-                'user_id'       => $mancipality->user_id,
-                'activity_name' => "Mancipality request approved.",
-                'status'        => "Request Approved"
-            ]);
-        }
-
-        if ($action === 'assign_grave_number') {
-            $grave_number = $request->grave_number;
-            $mancipality->grave_number = $grave_number;
-            $mancipality->grave_status = "grave-number-assigned";
-            $message = "Grave number assigned by Mancipality: " . $grave_number;
-
-            // Create cemetery case
+        if (!$cemeteryCase) {
             CemeteryCase::create([
                 'grave_number' => $grave_number,
                 'user_id'      => $mancipality->user_id,
                 'case_name'    => $mancipality->case_name,
             ]);
+        }
 
-            // Log assignment activity
-            RecentActivity::create([
-                'user_id'       => $mancipality->user_id,
-                'activity_name' => "Grave number assigned by Mancipality.",
-                'status'        => "Grave Assigned"
+        // Update related document submission
+        BurzakhMemberDocumentSubmission::where('user_id', $mancipality->user_id)
+            ->where('name_of_deceased', $mancipality->case_name)
+            ->update([
+                'burial_submission_status' => 'Approved',
+                'ratio' => 0.6
+            ]);
+    }
+
+    if ($action === 'assign_grave_number') {
+        $grave_number = $request->grave_number;
+        $mancipality->grave_number = $grave_number;
+        $mancipality->grave_status = "grave-number-assigned";
+        $message = "Grave number assigned by Mancipality: " . $grave_number;
+
+        // Update existing cemetery case or create if not exists
+        $cemeteryCase = CemeteryCase::where('user_id', $mancipality->user_id)
+            ->where('case_name', $mancipality->case_name)
+            ->first();
+
+        if ($cemeteryCase) {
+            $cemeteryCase->update([
+                'grave_number' => $grave_number,
+            ]);
+        } else {
+            CemeteryCase::create([
+                'grave_number' => $grave_number,
+                'user_id'      => $mancipality->user_id,
+                'case_name'    => $mancipality->case_name,
             ]);
         }
 
-        $mancipality->save();
-
-        // Send notification if any message was generated
-        if ($message) {
-            BurzakhNotification::create([
-                'user_id'              => $mancipality->user_id,
-                'notification_message' => $message,
-            ]);
-        }
-
-        // Update member document status only if approved
-        if ($action === 'approve') {
-            BurzakhMemberDocumentSubmission::where('user_id', $mancipality->user_id)
-                ->where('name_of_deceased', $mancipality->case_name)
-                ->update([
-                    'burial_submission_status' => 'Approved',
-                    'ratio' => 0.6
-                ]);
-        }
-
-        return response()->json([
-            'status'  => true,
-            'message' => 'Mancipality request status updated successfully.',
-            'data'    => $mancipality,
+        // Log assignment activity
+        RecentActivity::create([
+            'user_id'       => $mancipality->user_id,
+            'activity_name' => "Grave number assigned by Mancipality.",
+            'status'        => "Grave Assigned"
         ]);
     }
+
+    $mancipality->save();
+
+    if ($message) {
+        BurzakhNotification::create([
+            'user_id'              => $mancipality->user_id,
+            'notification_message' => $message,
+        ]);
+    }
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'Mancipality request status updated successfully.',
+        'data'    => $mancipality,
+    ]);
+}
+
 
 
     public function MancipalitySupoortMessage(Request $request)

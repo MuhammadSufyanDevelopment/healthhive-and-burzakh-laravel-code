@@ -36,6 +36,8 @@ class BurzakhMemberDocumentSubmission extends Model
         'ambulance_dispatched',
         'gender',
         'age',
+        'passport_document',
+        'passport_document_status'
     ];
 
     public function user()
